@@ -22,8 +22,42 @@ type Record struct {
 type Records []Record
 
 type Response struct {
-	Records      []Record `json:"records"`
-	ErrorMessage string   `json:"err"`
+	Result string          `json:"result"`
+	Data   json.RawMessage `json:"data"`
+	Error  string          `json:"error"`
+}
+
+func responseHandler(body []byte) {
+	var response Response
+	err := json.Unmarshal(body, &response)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if response.Result == "error" {
+		fmt.Println("server returned error: ", response.Error)
+		return
+	} else {
+		fmt.Println("Operation succeded")
+		if response.Result == "get" {
+			var records Records
+			err := json.Unmarshal(response.Data, &records)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			fmt.Println("--Get Records--")
+			for i, record := range records {
+				fmt.Println("\tRecord ", i)
+				fmt.Println("\t\tName: ", record.Name)
+				fmt.Println("\t\tLastName: ", record.LastName)
+				fmt.Println("\t\tLastName: ", record.MiddleName)
+				fmt.Println("\t\tAddress: ", record.Address)
+				fmt.Println("\t\tPhone: ", record.Phone)
+			}
+			fmt.Println("--END--")
+		}
+	}
 }
 
 // func for scanning terminal input, reurns the gotten record and num of fields
@@ -119,7 +153,7 @@ func addRecord() {
 		fmt.Print("addRecord()", err)
 		return
 	}
-	fmt.Println("response Body:", string(body))
+	responseHandler(body)
 }
 
 func getRecord() {
@@ -153,28 +187,7 @@ func getRecord() {
 		fmt.Println(err)
 		return
 	}
-	var response Response
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	if response.ErrorMessage != "" {
-		fmt.Println("error from server: ", response.ErrorMessage)
-		return
-	}
-
-	fmt.Println("--GET NOTES--")
-	for i, record := range response.Records {
-		fmt.Println("\tRecord ", i)
-		fmt.Println("\t\tName: ", record.Name)
-		fmt.Println("\t\tLastName: ", record.LastName)
-		fmt.Println("\t\tLastName: ", record.MiddleName)
-		fmt.Println("\t\tAddress: ", record.Address)
-		fmt.Println("\t\tPhone: ", record.Phone)
-	}
-	fmt.Println("--END--")
-
+	responseHandler(body)
 }
 
 func updateNotes() {
@@ -209,17 +222,7 @@ func updateNotes() {
 		fmt.Println(err)
 		return
 	}
-	var response Response
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	if response.ErrorMessage != "" {
-		fmt.Println("error from server: ", response.ErrorMessage)
-		return
-	}
-
+	responseHandler(body)
 }
 
 func deleteRecord() {
@@ -257,14 +260,5 @@ func deleteRecord() {
 		fmt.Println(err)
 		return
 	}
-	var response Response
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	if response.ErrorMessage != "" {
-		fmt.Println("error from server: ", response.ErrorMessage)
-		return
-	}
+	responseHandler(body)
 }
